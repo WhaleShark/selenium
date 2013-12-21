@@ -1,0 +1,3 @@
+
+java_library(name = "amazonaws",
+  deps = [ "aws-java-sdk-1.6.10.jar" ])

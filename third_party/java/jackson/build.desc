@@ -1,0 +1,7 @@
+
+java_library(name = "jackson",
+  deps = [
+    "jackson-core-2.2.3.jar",
+    "jackson-databind-2.2.3.jar",
+    "jackson-annotations-2.2.3.jar"
+  ])

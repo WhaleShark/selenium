@@ -2,6 +2,9 @@
 <project version="4">
   <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
     <file url="file://$PROJECT_DIR$/java/client/src/org/openqa/selenium/os/CommandLine.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/java/server/src/aws.properties" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/java/server/src/node.json" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/java/server/src/org/openqa/grid/web/servlet/rmn/aws/ManageEC2.java" charset="UTF-8" />
   </component>
 </project>
 

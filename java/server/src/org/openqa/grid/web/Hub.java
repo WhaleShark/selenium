@@ -18,31 +18,23 @@ limitations under the License.
 package org.openqa.grid.web;
 
 import com.google.common.collect.Maps;
-
 import org.openqa.grid.internal.Registry;
 import org.openqa.grid.internal.utils.GridHubConfiguration;
+import org.openqa.grid.web.servlet.*;
 import org.openqa.grid.web.servlet.beta.ConsoleServlet;
-import org.openqa.grid.web.servlet.DisplayHelpServlet;
-import org.openqa.grid.web.servlet.DriverServlet;
-import org.openqa.grid.web.servlet.Grid1HeartbeatServlet;
-import org.openqa.grid.web.servlet.HubStatusServlet;
-import org.openqa.grid.web.servlet.LifecycleServlet;
-import org.openqa.grid.web.servlet.ProxyStatusServlet;
-import org.openqa.grid.web.servlet.RegistrationServlet;
-import org.openqa.grid.web.servlet.ResourceServlet;
-import org.openqa.grid.web.servlet.TestSessionStatusServlet;
+import org.openqa.grid.web.servlet.rmn.AutomationStatusServlet;
+import org.openqa.grid.web.servlet.rmn.AutomationTestRunServlet;
 import org.openqa.grid.web.utils.ExtraServletUtil;
 import org.openqa.selenium.net.NetworkUtils;
 import org.seleniumhq.jetty7.server.Server;
 import org.seleniumhq.jetty7.server.bio.SocketConnector;
 import org.seleniumhq.jetty7.servlet.ServletContextHandler;
 
+import javax.servlet.Servlet;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import javax.servlet.Servlet;
 
 /**
  * Jetty server. Main entry point for everything about the grid. <p/> Except for unit tests, this
@@ -113,6 +105,8 @@ public class Hub {
       root.addServlet(DisplayHelpServlet.class.getName(), "/*");
 
       root.addServlet(ConsoleServlet.class.getName(), "/grid/console/*");
+        root.addServlet(AutomationStatusServlet.class.getName(), "/grid/statusRequest/*");
+      root.addServlet(AutomationTestRunServlet.class.getName(), "/grid/registerRun/*");
       root.addServlet(ConsoleServlet.class.getName(), "/grid/beta/console/*");
       root.addServlet(org.openqa.grid.web.servlet.ConsoleServlet.class.getName(), "/grid/old/console/*");
       root.addServlet(RegistrationServlet.class.getName(), "/grid/register/*");

@@ -1,7 +1,7 @@
 
 java_binary(name = "selenium",
   main_class = "org.openqa.grid.selenium.GridLauncher",
-  srcs = [ "**/*.java" ],
+  srcs = [ "**/*.java","**/*.properties","**/*.json" ],
   deps = [
     "//java/client/src/org/openqa/selenium:webdriver-api",
     "//java/client/src/org/openqa/selenium/firefox",
