@@ -169,7 +169,7 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
             log.warning(String.format("Insufficient nodes to fulfill request. New AMIs will be queued up. Requested [%s] - Available [%s] - Request UUID [%s]",threadCountRequested, currentlyAvailableNodes, uuid));
             boolean amisStartedSuccessfully = startNodes(uuid,amisToStart,browserRequested,osRequested);
             if(!amisStartedSuccessfully) {
-                // Make sure and deregister the run if the AMI startup was not successful
+                // Make sure and de-register the run if the AMI startup was not successful
                 AutomationContext.getContext().deleteRun(uuid);
                 response.sendError(HttpServletResponse.SC_CONFLICT,"Nodes could not be started");
                 return;
@@ -192,8 +192,10 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
     private boolean startNodes(String uuid,int threadCountRequested, String browser, String os) {
         log.info(String.format("%d threads requested",threadCountRequested));
         String localhostname;
+        // Try and get the IP address from the system property
+        String runTimeHostName = System.getProperty("ipAddress");
         try{
-            localhostname = java.net.InetAddress.getLocalHost().getHostName();
+            localhostname = (runTimeHostName != null ) ? runTimeHostName : java.net.InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
             return false;
         }
