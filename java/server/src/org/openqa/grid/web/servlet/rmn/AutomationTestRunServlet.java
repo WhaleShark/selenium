@@ -43,15 +43,17 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
     private static final long serialVersionUID = 8484071790930378855L;
     private static final Logger log = Logger.getLogger(AutomationTestRunServlet.class.getName());
     private static final long START_DELAY_IN_SECONDS = 60L;
+    private static final long HUB_TERMINATE_START_DELAY_IN_MINUTES= 5L;
     private static final long TEST_RUN_CLEANUP_POLLING_TIME_IN_SECONDS = 60L;
     private static final long EXPIRED_POLLING_TIME_IN_SECONDS = 15L;
+    private static final long HUB_TERMINATION_POLLING_TIME_IN_MINUTES = 1L;
     private static Object lock = new Object();
 
     public AutomationTestRunServlet() {
         this(null);
     }
 
-    private void initCleanupThread() {
+    private void initCleanupThreads() {
         // Wrapper to lazily fetch the Registry object as this is not populated at instantiation time
         IRetrieveContext retrieveContext = new IRetrieveContext() {
             @Override
@@ -63,13 +65,20 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationCleanupTask(retrieveContext),
                 AutomationTestRunServlet.START_DELAY_IN_SECONDS,AutomationTestRunServlet.TEST_RUN_CLEANUP_POLLING_TIME_IN_SECONDS, TimeUnit.SECONDS);
         // Spin up a scheduled thread to move nodes that were spun up into the expired state when they run out of time
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationNodeCleanupTask(retrieveContext),AutomationTestRunServlet.START_DELAY_IN_SECONDS,AutomationTestRunServlet.EXPIRED_POLLING_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationNodeCleanupTask(retrieveContext),
+                AutomationTestRunServlet.START_DELAY_IN_SECONDS,AutomationTestRunServlet.EXPIRED_POLLING_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        String instanceId = System.getProperty("instanceId");
+        if(instanceId != null && instanceId.length() > 0) {
+            log.info("Instance ID detected.  Hub will be automatically terminated.");
+            Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationHubCleanupTask(retrieveContext,instanceId),
+                 AutomationTestRunServlet.HUB_TERMINATE_START_DELAY_IN_MINUTES,AutomationTestRunServlet.HUB_TERMINATION_POLLING_TIME_IN_MINUTES, TimeUnit.MINUTES);
+        }
     }
 
     public AutomationTestRunServlet(Registry registry) {
         super(registry);
         // Start up our cleanup thread that will cleanup unused runs
-        this.initCleanupThread();
+        this.initCleanupThreads();
     }
 
     @Override
