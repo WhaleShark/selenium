@@ -67,11 +67,13 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
         // Spin up a scheduled thread to move nodes that were spun up into the expired state when they run out of time
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationNodeCleanupTask(retrieveContext),
                 AutomationTestRunServlet.START_DELAY_IN_SECONDS,AutomationTestRunServlet.EXPIRED_POLLING_TIME_IN_SECONDS, TimeUnit.SECONDS);
-        String instanceId = System.getProperty(AutomationConstants.IP_ADDRESS);
+        String instanceId = System.getProperty(AutomationConstants.INSTANCE_ID);
         if(instanceId != null && instanceId.length() > 0) {
-            log.info("Instance ID detected.  Hub will be automatically terminated.");
+            log.info("Instance ID detected.  Hub termination thread will be started.");
             Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationHubCleanupTask(retrieveContext,instanceId),
                  AutomationTestRunServlet.HUB_TERMINATE_START_DELAY_IN_MINUTES,AutomationTestRunServlet.HUB_TERMINATION_POLLING_TIME_IN_MINUTES, TimeUnit.MINUTES);
+        } else {
+            log.info("Hub is not a dynamic hub -- termination logic will not be started");
         }
     }
 
