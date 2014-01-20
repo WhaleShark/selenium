@@ -67,7 +67,7 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
         // Spin up a scheduled thread to move nodes that were spun up into the expired state when they run out of time
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationNodeCleanupTask(retrieveContext),
                 AutomationTestRunServlet.START_DELAY_IN_SECONDS,AutomationTestRunServlet.EXPIRED_POLLING_TIME_IN_SECONDS, TimeUnit.SECONDS);
-        String instanceId = System.getProperty("instanceId");
+        String instanceId = System.getProperty(AutomationConstants.IP_ADDRESS);
         if(instanceId != null && instanceId.length() > 0) {
             log.info("Instance ID detected.  Hub will be automatically terminated.");
             Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationHubCleanupTask(retrieveContext,instanceId),
@@ -202,7 +202,7 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
         log.info(String.format("%d threads requested",threadCountRequested));
         String localhostname;
         // Try and get the IP address from the system property
-        String runTimeHostName = System.getProperty("ipAddress");
+        String runTimeHostName = System.getProperty(AutomationConstants.IP_ADDRESS);
         try{
             localhostname = (runTimeHostName != null ) ? runTimeHostName : java.net.InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
