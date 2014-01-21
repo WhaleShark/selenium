@@ -6,6 +6,9 @@ package org.openqa.grid.web.servlet.rmn;
  */
 public interface AutomationConstants {
 
+    // This is the value that will be in the desired capabilities that our node registers with
+    String INSTANCE_ID_DESIRED_CAPABILITIES = "instance_id";
+    // Runtime value of the hub instance id that gets passed in
     String INSTANCE_ID = "instanceId";
     String IP_ADDRESS = "ipAddress";
     String UUID = "uuid";

@@ -97,7 +97,7 @@ public class AutomationNodeCleanupTask extends Thread {
             boolean nodeFound = false;
             for (TestSlot testSlot : slots) {
                 Map<String,Object> capabilities = testSlot.getCapabilities();
-                Object instanceId = capabilities.get(AutomationConstants.INSTANCE_ID);
+                Object instanceId = capabilities.get(AutomationConstants.INSTANCE_ID_DESIRED_CAPABILITIES);
                 if(instanceId != null) {
                     if(instanceToFind.equals(instanceId)) {
                         nodeFound = true;
@@ -120,7 +120,8 @@ public class AutomationNodeCleanupTask extends Thread {
                 return true;
             }
         }
-        // Throw an exception if we could not find a matching node, as this is probably a serious problem
-        throw new RuntimeException("Node was not found in registry.  Node instanceId: " + instanceToFind);
+        // If we didn't find a matching node, we're going to say the nodes is empty so we can terminate it
+        log.warning("No matching node was found in the proxy set.  Instance id: " + instanceToFind);
+        return true;
     }
 }
