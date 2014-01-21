@@ -6,7 +6,7 @@ package org.openqa.grid.web.servlet.rmn;
  */
 public interface AutomationConstants {
 
-    String INSTANCE_ID = "instance_id";
+    String INSTANCE_ID = "instanceId";
     String IP_ADDRESS = "ipAddress";
     String UUID = "uuid";
 
