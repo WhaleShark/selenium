@@ -70,6 +70,21 @@ public class AutomationRunContext {
     }
 
     /**
+     * Gets the run request for the specified UUID
+     * @param uuid
+     * @return
+     */
+    public AutomationRunRequest getRunRequest(String uuid) {
+        synchronized (requests) {
+            return requests.get(uuid);
+        }
+    }
+
+    public Set<String> getRunUuids() {
+        return requests.keySet();
+    }
+
+    /**
      * Adds the node to the internal tracking map
      * @param node
      */
@@ -159,7 +174,7 @@ public class AutomationRunContext {
                     }
                     // If we didn't find a test belonging to this uuid, go ahead and remove the run
                     if(!uuidFound) {
-                        log.info(String.format("Tracked test run [%s] found with no running tests.  Removing.",uuid));
+                        log.info(String.format("Tracked test run [%s] found with no running tests.  Adding to set for removal.",uuid));
                         uuidsToRemove.add(uuid);
                     }
                     // Otherwise go ahead and continue to look at our other registered runs
@@ -169,7 +184,6 @@ public class AutomationRunContext {
                 }
             }
         }
-
         if(uuidsToRemove.size() == 0) {
             log.warning("No runs found to clean up");
         }
@@ -204,9 +218,7 @@ public class AutomationRunContext {
         int currentlyUsedNodes = 0;
         // Iterate over all runs currently running and add up their count so we can diff this from the total
         // count this hub can support
-        Iterator<AutomationRunRequest> iterator = requests.values().iterator();
-        while(iterator.hasNext()) {
-            AutomationRunRequest request = iterator.next();
+        for(AutomationRunRequest request : requests.values()){
             currentlyUsedNodes += request.getThreadCount();
         }
         return totalNodeCount - currentlyUsedNodes;

@@ -63,7 +63,7 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
             }
         };
         // Spin up a scheduled thread to poll for unused test runs and clean up them
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationCleanupTask(retrieveContext),
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationRunCleanupTask(retrieveContext),
                 AutomationTestRunServlet.START_DELAY_IN_SECONDS,AutomationTestRunServlet.TEST_RUN_CLEANUP_POLLING_TIME_IN_SECONDS, TimeUnit.SECONDS);
         // Spin up a scheduled thread to clean up and terminate nodes that were spun up
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationNodeCleanupTask(retrieveContext),
@@ -160,13 +160,13 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
                 // Get the difference which will be the number of additional nodes we need to spin up to supplement existing nodes
                 amisToStart = threadCountRequested - currentlyAvailableNodes;
             }
-            AutomationRunRequest newRunRequest = new AutomationRunRequest(uuid, threadCountRequested, browserRequested);
             // If the browser requested is not supported by AMIs, we need to not unnecessarily spin up AMIs
             if(amisNeeded && !browserSupportedByAmis(browserRequested)) {
                 response.sendError(HttpServletResponse.SC_GONE,"Request cannot be fulfilled and browser is not supported by AMIs");
                 return;
             }
             // Add the run to our context so we can track it
+            AutomationRunRequest newRunRequest = new AutomationRunRequest(uuid, threadCountRequested, browserRequested);
             boolean addSuccessful = AutomationContext.getContext().addRun(newRunRequest);
             if(!addSuccessful) {
                 log.warning(String.format("Test run already exists for the same UUID [%s]",uuid));
@@ -201,34 +201,39 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
      */
     private boolean startNodes(String uuid,int threadCountRequested, String browser, String os) {
         log.info(String.format("%d threads requested",threadCountRequested));
-        String localhostname;
-        // Try and get the IP address from the system property
-        String runTimeHostName = System.getProperty(AutomationConstants.IP_ADDRESS);
-        try{
-            localhostname = (runTimeHostName != null ) ? runTimeHostName : InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
+        try{ String localhostname;
+            // Try and get the IP address from the system property
+            String runTimeHostName = System.getProperty(AutomationConstants.IP_ADDRESS);
+            try{
+                localhostname = (runTimeHostName != null ) ? runTimeHostName : InetAddress.getLocalHost().getHostName();
+            } catch (UnknownHostException e) {
+                return false;
+            }
+            ManageEC2 ec2 = new ManageEC2();
+            // TODO Make matching logic better
+            int NUM_THREADS = 6;
+            int leftOver = threadCountRequested % NUM_THREADS;
+            int machinesNeeded = (threadCountRequested / NUM_THREADS);
+            if(leftOver != 0) {
+                // Add the remainder
+                machinesNeeded++;
+            }
+            log.info(String.format("%s nodes will be requested",machinesNeeded));
+            List<Instance> instances = ec2.launchChromeGridNode(uuid,"ubuntu", localhostname, machinesNeeded);
+            log.info(String.format("%d instances started", instances.size()));
+            // Reuse the start date since all the nodes were created within the same request
+            Date startDate = new Date();
+            for(Instance instance : instances) {
+                log.info("Node instance id: " + instance.getInstanceId());
+                AutomationContext.getContext().addNode(
+                    new AutomationDynamicNode(uuid, instance.getInstanceId(), browser, os, startDate,
+                                              NUM_THREADS));
+            }
+        } catch(Exception e) {
+            log.severe("Error trying to start nodes: " + e);
             return false;
         }
-        ManageEC2 ec2 = new ManageEC2();
-        // TODO Make matching logic better
-        int NUM_THREADS = 6;
-        int leftOver = threadCountRequested % NUM_THREADS;
-        int machinesNeeded = (threadCountRequested / NUM_THREADS);
-        if(leftOver != 0) {
-            // Add the remainder
-            machinesNeeded++;
-        }
-        log.info(String.format("%s nodes will be requested",machinesNeeded));
-        List<Instance> instances = ec2.launchChromeGridNode(uuid,"ubuntu", localhostname, machinesNeeded);
-        log.info(String.format("%d instances started", instances.size()));
-        // Reuse the start date since all the nodes were created within the same request
-        Date startDate = new Date();
-        for(Instance instance : instances) {
-            log.info("Node instance id: " + instance.getInstanceId());
-            AutomationContext.getContext().addNode(
-                new AutomationDynamicNode(uuid, instance.getInstanceId(), browser, os, startDate,
-                                          NUM_THREADS));
-        }
+
         return true;
     }
 

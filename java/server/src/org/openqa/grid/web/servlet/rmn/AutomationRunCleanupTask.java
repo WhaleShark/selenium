@@ -2,13 +2,13 @@ package org.openqa.grid.web.servlet.rmn;
 
 import java.util.logging.Logger;
 
-public class AutomationCleanupTask extends Thread {
+public class AutomationRunCleanupTask extends Thread {
 
     private static final Logger log = Logger.getLogger(AutomationTestRunServlet.class.getName());
 
     private IRetrieveContext retrieveContext;
 
-    public AutomationCleanupTask(IRetrieveContext retrieveContext) {
+    public AutomationRunCleanupTask(IRetrieveContext retrieveContext) {
         this.retrieveContext = retrieveContext;
     }
 
