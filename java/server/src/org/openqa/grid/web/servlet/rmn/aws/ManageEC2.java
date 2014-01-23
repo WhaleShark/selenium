@@ -181,6 +181,8 @@ public class ManageEC2 {
         }
         String nodeConfig = getFileContents(location);
         nodeConfig = nodeConfig.replaceAll("<MAX_SESSION>", String.valueOf(maxSessions));
+        nodeConfig = nodeConfig.replaceAll("<MAX_SESSION_FIREFOX>", String.valueOf(ManageEC2.FIREFOX_IE_THREAD_COUNT));
+        nodeConfig = nodeConfig.replaceAll("<MAX_SESSION_CHROME>", String.valueOf(ManageEC2.CHROME_THREAD_COUNT));
         nodeConfig = nodeConfig.replaceAll("<UUID>", uuid);
         nodeConfig = nodeConfig.replaceFirst("<HOST_NAME>", hostName);
 
