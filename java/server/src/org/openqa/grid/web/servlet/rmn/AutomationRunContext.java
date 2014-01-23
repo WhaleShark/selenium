@@ -14,7 +14,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -27,7 +26,7 @@ public class AutomationRunContext {
 
     private static final long CLEANUP_LIFE_LENGTH = 180L; // 3 minutes
     private Map<String, AutomationRunRequest> requests = Maps.newConcurrentMap();
-    private Map<String,AutomationDynamicNode> nodes = new ConcurrentHashMap<String, AutomationDynamicNode>();
+    private Map<String,AutomationDynamicNode> nodes = Maps.newConcurrentMap();
 
     private int totalNodeCount;
 

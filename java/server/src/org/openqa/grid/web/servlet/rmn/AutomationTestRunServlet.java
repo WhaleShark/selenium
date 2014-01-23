@@ -15,6 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
 package org.openqa.grid.web.servlet.rmn;
 
 import com.amazonaws.services.ec2.model.Instance;
@@ -24,6 +25,7 @@ import org.openqa.grid.web.servlet.RegistryBasedServlet;
 import org.openqa.grid.web.servlet.rmn.aws.ManageEC2;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
@@ -47,7 +49,6 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
     private static final long TEST_RUN_CLEANUP_POLLING_TIME_IN_SECONDS = 60L;
     private static final long EXPIRED_POLLING_TIME_IN_SECONDS = 15L;
     private static final long HUB_TERMINATION_POLLING_TIME_IN_MINUTES = 1L;
-    private static Object lock = new Object();
 
     public AutomationTestRunServlet() {
         this(null);
@@ -64,7 +65,7 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
         // Spin up a scheduled thread to poll for unused test runs and clean up them
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationCleanupTask(retrieveContext),
                 AutomationTestRunServlet.START_DELAY_IN_SECONDS,AutomationTestRunServlet.TEST_RUN_CLEANUP_POLLING_TIME_IN_SECONDS, TimeUnit.SECONDS);
-        // Spin up a scheduled thread to move nodes that were spun up into the expired state when they run out of time
+        // Spin up a scheduled thread to clean up and terminate nodes that were spun up
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new AutomationNodeCleanupTask(retrieveContext),
                 AutomationTestRunServlet.START_DELAY_IN_SECONDS,AutomationTestRunServlet.EXPIRED_POLLING_TIME_IN_SECONDS, TimeUnit.SECONDS);
         String instanceId = System.getProperty(AutomationConstants.INSTANCE_ID);
@@ -91,9 +92,7 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
             return;
         }
         boolean deleteSuccessful;
-        synchronized (lock) {
-            deleteSuccessful = AutomationContext.getContext().deleteRun(uuid);
-        }
+        deleteSuccessful = AutomationContext.getContext().deleteRun(uuid);
 
         if (!deleteSuccessful) {
             response.sendError(HttpServletResponse.SC_CONFLICT, "Run does not exist on server");
@@ -145,7 +144,7 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
         int amisToStart=0;
         int currentlyAvailableNodes;
         // Synchronize this block until we've added the run to our context for other potential threads to see
-        synchronized (lock) {
+        synchronized (this) {
             int remainingNodesAvailable = AutomationContext.getContext().getTotalHubNodesAvailable();
             // If the number of nodes this grid hub can actually run is less than the number requested, this hub can not fulfill this run at this time
             if(remainingNodesAvailable < threadCountRequested) {
@@ -206,12 +205,12 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
         // Try and get the IP address from the system property
         String runTimeHostName = System.getProperty(AutomationConstants.IP_ADDRESS);
         try{
-            localhostname = (runTimeHostName != null ) ? runTimeHostName : java.net.InetAddress.getLocalHost().getHostName();
+            localhostname = (runTimeHostName != null ) ? runTimeHostName : InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
             return false;
         }
         ManageEC2 ec2 = new ManageEC2();
-        // TODO Make this logic better
+        // TODO Make matching logic better
         int NUM_THREADS = 6;
         int leftOver = threadCountRequested % NUM_THREADS;
         int machinesNeeded = (threadCountRequested / NUM_THREADS);

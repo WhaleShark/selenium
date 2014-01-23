@@ -32,8 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Front end to monitor what is currently happening on the proxies. The display is defined by
- * HtmlRenderer returned by the RemoteProxy.getHtmlRenderer() method.
+ * Legacy API to pull free threads for a given browser
  */
 public class AutomationStatusServlet extends RegistryBasedServlet {
 

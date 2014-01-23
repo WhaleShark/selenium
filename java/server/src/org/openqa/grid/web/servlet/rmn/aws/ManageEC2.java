@@ -36,6 +36,7 @@ public class ManageEC2 {
     private String region;
 
     public ManageEC2() {
+        // Default the the east region
         this("east");
     }
 
@@ -59,7 +60,6 @@ public class ManageEC2 {
             throw new RuntimeException("propertyFileLocation property must be set");
         }
         try {
-
             File f = new File(propertiesLocation);
             InputStream is = new FileInputStream(f);
             properties.load(is);
@@ -95,9 +95,10 @@ public class ManageEC2 {
         ;
         // Set AMI name depending on OS
         getRequestForOs(runRequest,os);
-
+        log.info("Sending run request to AWS...");
         RunInstancesResult runInstancesResult = client.runInstances(runRequest);
 
+        log.info("Run request result returned.  Adding tags");
         //Tag the instances with the standard RMN AWS data
         List<Instance> instances = runInstancesResult.getReservation().getInstances();
         for(Instance instance : instances) {
@@ -153,7 +154,7 @@ public class ManageEC2 {
     }
 
     /**
-     * Terminats the specified instance
+     * Terminates the specified instance
      * @param instanceId
      */
     public void terminateInstance(String instanceId) {

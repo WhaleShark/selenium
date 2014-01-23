@@ -29,7 +29,7 @@ public class AutomationHubCleanupTask extends Thread {
         log.info("Performing cleanup on hub.");
         ProxySet proxySet = retrieveContext.retrieveRegistry().getAllProxies();
         if(proxySet.isEmpty()) {
-            log.warning("No running nodes found.  Terminating hub: " + instanceId);
+            log.warning("No running nodes found -- terminating hub: " + instanceId);
             ec2.terminateInstance(instanceId);
         }
     }
