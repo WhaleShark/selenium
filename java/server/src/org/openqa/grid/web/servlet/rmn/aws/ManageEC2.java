@@ -13,6 +13,8 @@ import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.sun.org.apache.xml.internal.security.utils.Base64;
 
+import org.openqa.selenium.remote.BrowserType;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,6 +34,8 @@ public class ManageEC2 {
     private static final Logger log = Logger.getLogger(ManageEC2.class.getName());
     private AmazonEC2Client client;
     private Properties awsProperties;
+    public static final int CHROME_THREAD_COUNT =6;
+    public static final int FIREFOX_IE_THREAD_COUNT = 1;
 
     private String region;
 
@@ -73,28 +77,23 @@ public class ManageEC2 {
         return new BasicAWSCredentials(awsProperties.getProperty("access_key"),awsProperties.getProperty("secret_key"));
     }
 
-    /**
-     * Creates an instance of the Grid Hub (as specified by the aws.properties file)
-     * @return The Instance
-     */
-    public List<Instance> launchChromeGridNode(String uuid, String os, String hostName, int nodeCount) {
-
-        String nodeConfig = getNodeConfig(uuid,hostName);
+    public List<Instance> launchNodes(String uuid, String os, String browser, String hostName, int nodeCount, int maxSessions) {
+        String nodeConfig = getNodeConfig(uuid,hostName,maxSessions);
         log.info("Node Config: " + nodeConfig);
 
         RunInstancesRequest runRequest = new RunInstancesRequest();
         runRequest
-                .withImageId(awsProperties.getProperty(region + "_linux_node_ami"))
-                .withInstanceType(awsProperties.getProperty("node_instance_type"))
-                .withMinCount(1)
-                .withMaxCount(nodeCount)
-                .withUserData(nodeConfig)
-                .withKeyName("grid-test-" + region)
-                .withSubnetId(awsProperties.getProperty(region + "_subnet_id"))
-                .withSecurityGroupIds(awsProperties.getProperty(region + "_security_group"))
+            .withImageId(awsProperties.getProperty(region + "_linux_node_ami"))
+            .withInstanceType(awsProperties.getProperty("node_instance_type_" + browser))
+            .withMinCount(1)
+            .withMaxCount(nodeCount)
+            .withUserData(nodeConfig)
+            .withKeyName("grid-test-" + region)
+            .withSubnetId(awsProperties.getProperty(region + "_subnet_id"))
+            .withSecurityGroupIds(awsProperties.getProperty(region + "_security_group"))
         ;
         // Set AMI name depending on OS
-        getRequestForOs(runRequest,os);
+        getRequestForOs(runRequest,os,browser);
         log.info("Sending run request to AWS...");
         RunInstancesResult runInstancesResult = client.runInstances(runRequest);
 
@@ -135,16 +134,16 @@ public class ManageEC2 {
         return ctr;
     }
 
-    private RunInstancesRequest getRequestForOs(RunInstancesRequest request, String os) {
+    private RunInstancesRequest getRequestForOs(RunInstancesRequest request, String os,String browser) {
         // Unspecified OS will default to Ubuntu
         if (null == os) {
             os = "ubuntu";
         }
         String requestedProperty;
-        if(os.equals("ubuntu")) {
-            requestedProperty = region + "_linux_node_ami";
-        } else if(os.equals("windows")) {
+        if(os.equals("windows") || browser.equals(BrowserType.IE.replace(" ",""))) {
             requestedProperty = region + "_windows_node_ami";
+        } else if(os.equals("ubuntu")) {
+            requestedProperty = region + "_linux_node_ami";
         } else {
             throw new RuntimeException("Unsupported OS: " + os);
         }
@@ -175,13 +174,13 @@ public class ManageEC2 {
      * Reads the hub.json file and returns its contents as a Base64-encoded string
      * @return
      */
-    private String getNodeConfig(String uuid,String hostName) {
+    private String getNodeConfig(String uuid,String hostName, int maxSessions) {
         String location = System.getProperty("nodeConfig");
         if(location == null) {
             throw new RuntimeException("Property 'nodeConfig' cannot be null");
         }
         String nodeConfig = getFileContents(location);
-        nodeConfig = nodeConfig.replaceAll("<MAX_SESSION>", "6");
+        nodeConfig = nodeConfig.replaceAll("<MAX_SESSION>", String.valueOf(maxSessions));
         nodeConfig = nodeConfig.replaceAll("<UUID>", uuid);
         nodeConfig = nodeConfig.replaceFirst("<HOST_NAME>", hostName);
 

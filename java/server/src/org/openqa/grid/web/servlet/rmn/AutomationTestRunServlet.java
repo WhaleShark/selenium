@@ -23,6 +23,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import org.openqa.grid.internal.Registry;
 import org.openqa.grid.web.servlet.RegistryBasedServlet;
 import org.openqa.grid.web.servlet.rmn.aws.ManageEC2;
+import org.openqa.selenium.remote.BrowserType;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -211,15 +212,23 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
             }
             ManageEC2 ec2 = new ManageEC2();
             // TODO Make matching logic better
-            int NUM_THREADS = 6;
-            int leftOver = threadCountRequested % NUM_THREADS;
-            int machinesNeeded = (threadCountRequested / NUM_THREADS);
+            int numThreads;
+            if(browser.equals(BrowserType.CHROME)) {
+                numThreads = ManageEC2.CHROME_THREAD_COUNT;
+            } else if (browser.equals(BrowserType.IE.replace(" ","")) || browser.equals(BrowserType.FIREFOX)) {
+                numThreads=ManageEC2.FIREFOX_IE_THREAD_COUNT;
+            } else {
+                throw new RuntimeException("Unsupported browser: " + browser);
+            }
+            int leftOver = threadCountRequested % numThreads;
+            int machinesNeeded = (threadCountRequested / numThreads);
             if(leftOver != 0) {
                 // Add the remainder
                 machinesNeeded++;
             }
             log.info(String.format("%s nodes will be requested",machinesNeeded));
-            List<Instance> instances = ec2.launchChromeGridNode(uuid,"ubuntu", localhostname, machinesNeeded);
+            List<Instance> instances = ec2.launchNodes(uuid, os, browser, localhostname,
+                                                       machinesNeeded, numThreads);
             log.info(String.format("%d instances started", instances.size()));
             // Reuse the start date since all the nodes were created within the same request
             Date startDate = new Date();
@@ -227,7 +236,7 @@ public class AutomationTestRunServlet extends RegistryBasedServlet {
                 log.info("Node instance id: " + instance.getInstanceId());
                 AutomationContext.getContext().addNode(
                     new AutomationDynamicNode(uuid, instance.getInstanceId(), browser, os, startDate,
-                                              NUM_THREADS));
+                                              numThreads));
             }
         } catch(Exception e) {
             log.severe("Error trying to start nodes: " + e);
