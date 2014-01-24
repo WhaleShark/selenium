@@ -1,5 +1,6 @@
 package org.openqa.grid.web.servlet.rmn;
 
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -55,6 +56,17 @@ public class AutomationRunRequest {
      */
     public Date getCreatedDate() {
         return createdDate;
+    }
+
+    /**
+     * Returns true if this run request is less than 2 minutes old, false otherwise
+     * @return
+     */
+    public boolean isNewRun() {
+        Calendar c = Calendar.getInstance();
+        c.setTime(createdDate);
+        c.add(Calendar.MINUTE,2);
+        return new Date().before(c.getTime());
     }
 
 }

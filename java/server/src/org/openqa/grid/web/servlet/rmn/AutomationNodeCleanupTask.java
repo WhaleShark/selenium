@@ -44,8 +44,9 @@ public class AutomationNodeCleanupTask extends Thread {
             // If the current time is after the scheduled end time for this node and the node is still running, go ahead and queue it to be removed
             if(nodeStatus == AutomationDynamicNode.STATUS.RUNNING && nowDate.after(node.getEndDate())) {
                 int freeSlots = AutomationUtils.getNumFreeSlotsForBrowser(retrieveContext.retrieveRegistry(),node.getBrowser(),node.getOs());
-                // If free slots are greater than OR equal to our node capacity, that means we have enough wiggle room to go ahead and delete this node
-                if(freeSlots >= node.getNodeCapacity()) {
+                // If free slots are greater than OR equal to our node capacity, that means we have enough wiggle room to go ahead and delete this node.
+                // We also need to check to make sure there are no registered runs that have not yet started up
+                if(freeSlots >= node.getNodeCapacity() && !context.isNewRunQueuedUp()) {
                     log.info(String.format("Updating node %s to 'EXPIRED' status.  Start date [%s] End date [%s]",instanceId,node.getStartDate(),node.getEndDate()));
                     node.updateStatus(AutomationDynamicNode.STATUS.EXPIRED);
                     // Adding a continue here as no other checks need to be made for this node at this time

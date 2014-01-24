@@ -80,8 +80,29 @@ public class AutomationRunContext {
         }
     }
 
+    /**
+     * Returns the registered run UUIDs
+     * @return
+     */
     public Set<String> getRunUuids() {
         return requests.keySet();
+    }
+
+    /**
+     * Returns true if there are any registered runs that have started in the last 2 minutes, false otherwise
+     * @return
+     */
+    public boolean isNewRunQueuedUp() {
+        synchronized (requests) {
+            Set<String> uuids = AutomationContext.getContext().getRunUuids();
+            for(String uuid : uuids) {
+                AutomationRunRequest request = AutomationContext.getContext().getRunRequest(uuid);
+                if(request.isNewRun()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
