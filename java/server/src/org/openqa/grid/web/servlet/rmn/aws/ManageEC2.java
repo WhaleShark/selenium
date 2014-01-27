@@ -59,7 +59,6 @@ public class ManageEC2 {
     private Properties initAWSProperties() {
         Properties properties = new Properties();
         String propertiesLocation = System.getProperty("propertyFileLocation");
-        System.out.print(System.getProperty("user.dir"));
         if(propertiesLocation == null) {
             throw new RuntimeException("propertyFileLocation property must be set");
         }
@@ -67,8 +66,8 @@ public class ManageEC2 {
             File f = new File(propertiesLocation);
             InputStream is = new FileInputStream(f);
             properties.load(is);
-            } catch (IOException e) {
-                log.severe("Could not load aws.properties" + e);
+        } catch (IOException e) {
+            log.severe("Could not load aws.properties" + e);
         }
         return properties;
     }

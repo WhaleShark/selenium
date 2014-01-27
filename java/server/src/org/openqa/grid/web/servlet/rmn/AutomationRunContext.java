@@ -8,6 +8,7 @@ import org.openqa.grid.internal.RemoteProxy;
 import org.openqa.grid.internal.TestSession;
 import org.openqa.grid.internal.TestSlot;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -24,7 +25,7 @@ public class AutomationRunContext {
 
     private static final Logger log = Logger.getLogger(AutomationRunContext.class.getName());
 
-    private static final long CLEANUP_LIFE_LENGTH = 180L; // 3 minutes
+    private static final int CLEANUP_LIFE_LENGTH_IN_SECONDS = 90; // 1.5 minutes
     private Map<String, AutomationRunRequest> requests = Maps.newConcurrentMap();
     private Map<String,AutomationDynamicNode> nodes = Maps.newConcurrentMap();
 
@@ -158,16 +159,15 @@ public class AutomationRunContext {
         Set<String> uuidsToRemove = new HashSet<String>();
         Iterator<String> requestsIterator = requests.keySet().iterator();
         if(requestsIterator.hasNext()) {
+            // Grab our current date to use on all the requests we check
+            Date currentDate = new Date();
             synchronized (requests) {
                 while(requestsIterator.hasNext())
                 {
                     String uuid = requestsIterator.next();
-                    Date runCreatedDate = requests.get(uuid).getCreatedDate();
-                    Date currentDate = new Date();
-                    // Get the amount of seconds passed
-                    long timePassed = (currentDate.getTime() - runCreatedDate.getTime()) / 1000; // Seconds calculation
-                    if(timePassed < AutomationRunContext.CLEANUP_LIFE_LENGTH) {
-                        log.info(String.format("Run [%s] is not at least [%d] seconds old.  Will not analyze.",uuid,AutomationRunContext.CLEANUP_LIFE_LENGTH));
+                    AutomationRunRequest request = requests.get(uuid);
+                    if(!isRunOld(currentDate,request)) {
+                        log.info(String.format("Run [%s] is not at least [%d] seconds old.  Will not analyze.",uuid,AutomationRunContext.CLEANUP_LIFE_LENGTH_IN_SECONDS));
                         continue;
                     }
                     boolean uuidFound = false;
@@ -212,6 +212,20 @@ public class AutomationRunContext {
             log.warning(String.format("Removing run because it has no more running test slots. UUID [%s]",uuidToRemove));
             context.deleteRun(uuidToRemove);
         }
+    }
+
+    /**
+     * Returns true if the run request is old enough for the configure criteria
+     * @param currentDate
+     * @param runRequest
+     * @return
+     */
+    private boolean isRunOld(Date currentDate, AutomationRunRequest runRequest) {
+        // Get the amount of seconds passed
+        Calendar c = Calendar.getInstance();
+        c.setTime(runRequest.getCreatedDate());
+        c.add(Calendar.SECOND,AutomationRunContext.CLEANUP_LIFE_LENGTH_IN_SECONDS);
+        return currentDate.after(c.getTime());
     }
 
     /**
